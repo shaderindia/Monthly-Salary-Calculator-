@@ -745,8 +745,7 @@
             "The only way to do great work is to love what you do. - Steve Jobs",
             "Strive not to be a success, but rather to be of value. - Albert Einstein",
             "Keep pushing forward! You're doing great.",
-            "Your dedication today determines your success tomorrow.",
-            "Make each day your masterpiece."
+            "Your dedication today determines your success tomorrow."
         ];
         const msg = messages[Math.floor(Math.random() * messages.length)];
         document.getElementById("motivational-message").textContent = msg;
@@ -788,6 +787,7 @@
 
         const [yearStr, monthStr] = monthYearValue.split('-');
         const year = parseInt(yearStr);
+        // Corrected: Ensure month is parsed as an integer for Date object
         const month = parseInt(monthStr); // Month is 1-indexed from input type="month"
 
         // Basic validation for salary and fixedBaseHours, but calendar generation proceeds if month/year are valid
@@ -1094,7 +1094,7 @@
 
         const [yearStr, monthStr] = monthYearValue.split('-');
         const year = parseInt(yearStr);
-        const month = parseInt(month); // Month is 1-indexed
+        const month = parseInt(monthStr); // Month is 1-indexed
 
         const weekendRate = parseFloat(document.getElementById('weekendRate').value) || 1;
         const exchangeRate = parseFloat(document.getElementById('exchange-rate').value) || 1;
