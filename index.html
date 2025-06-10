@@ -408,8 +408,8 @@
             min-width: 40px;
             text-align: center;
         }
-        #modal-download-btn {
-            background-color: #e74c3c;
+        /* Style for individual download buttons */
+        #modal-download-pdf-btn, #modal-download-jpg-btn {
             color: #fff;
             padding: 12px 25px;
             border: none;
@@ -424,15 +424,22 @@
             gap: 8px;
             animation: pulse 2s infinite alternate; /* Highlight effect */
         }
-        #modal-download-btn:hover {
-            background-color: #c0392b;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        #modal-download-pdf-btn {
+            background-color: #e74c3c; /* Red for PDF */
         }
-        #modal-download-btn:active {
+        #modal-download-jpg-btn {
+            background-color: #f39c12; /* Orange for JPG */
+        }
+
+        #modal-download-pdf-btn:hover { background-color: #c0392b; }
+        #modal-download-jpg-btn:hover { background-color: #e67e22; }
+
+        #modal-download-pdf-btn:active,
+        #modal-download-jpg-btn:active {
             transform: translateY(0);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
 
         /* Close button styles */
         #modal-close-btn {
@@ -612,8 +619,7 @@
         <div class="button-group">
             <button onclick="clearAllHours()" style="background-color:#f39c12;"><i class="fas fa-trash"></i> Remove All Hours</button>
             <button onclick="saveMonthData()" style="background-color:#2980b9;"><i class="fas fa-save"></i> Save This Month</button>
-            <button onclick="showReportPreview('pdf')" style="background-color:#8e44ad;"><i class="fas fa-file-pdf"></i> Preview & Download PDF</button>
-            <button onclick="showReportPreview('jpg')" style="background-color:#5cb85c;"><i class="fas fa-file-image"></i> Preview & Download JPG</button>
+            <button onclick="showReportPreview()" style="background-color:#8e44ad;"><i class="fas fa-eye"></i> Generate Report Preview</button>
             <button onclick="shareApp()" style="background-color:#7f8c8d;"><i class="fas fa-share-alt"></i> Share App</button>
         </div>
 
@@ -655,13 +661,14 @@
 
     <div id="report-preview-modal" class="hidden">
         <div class="report-controls">
-            <button id="modal-download-btn" onclick="downloadReport()"><i class="fas fa-download"></i> Download</button>
+            <button id="modal-download-pdf-btn" onclick="downloadReport('pdf')"><i class="fas fa-file-pdf"></i> Download PDF</button>
             <div class="zoom-controls">
                 <button onclick="zoomReport(-0.1)"><i class="fas fa-search-minus"></i></button>
                 <span id="zoom-level">100%</span>
                 <button onclick="zoomReport(0.1)"><i class="fas fa-search-plus"></i></button>
             </div>
-             <button id="modal-close-btn" onclick="hideReportPreview()"><i class="fas fa-times"></i> Close</button>
+            <button id="modal-download-jpg-btn" onclick="downloadReport('jpg')"><i class="fas fa-file-image"></i> Download JPG</button>
+            <button id="modal-close-btn" onclick="hideReportPreview()"><i class="fas fa-times"></i> Close</button>
         </div>
         <div id="report-preview-content">
             </div>
@@ -672,7 +679,6 @@
 <script>
     // Global variables
     let currentZoom = 1.0; // Initial zoom level for report preview
-    let currentDownloadFormat = 'pdf'; // Default download format
 
     // --- Utility Functions ---
     function updateDate() {
@@ -1009,6 +1015,27 @@
     }
 
     // --- Report Generation and Download ---
+    // Changed showReportPreview to only generate and display the preview
+    function showReportPreview() {
+        const employeeName = document.getElementById('employee-name-input').value.trim();
+        const companyName = document.getElementById('company-name').value.trim();
+        const monthYearValue = document.getElementById('month-year-picker').value;
+
+        if (!employeeName || !companyName || !monthYearValue) {
+            alert('Please enter Employee Name, Company Name, and select a Month/Year before generating a report.');
+            return;
+        }
+
+        const reportContentDiv = document.getElementById('report-preview-content');
+        reportContentDiv.innerHTML = generateReportHTML();
+        document.getElementById('report-preview-modal').classList.remove('hidden');
+        resetZoom();
+
+        // Optionally, you could highlight the PDF button here,
+        // but now there are two distinct buttons, so no specific highlighting is needed
+        // unless you want a default animation for one of them.
+    }
+
     function generateReportHTML() {
         const employeeName = document.getElementById('employee-name-input').value.trim() || 'N/A';
         const companyName = document.getElementById('company-name').value || 'N/A';
@@ -1191,27 +1218,6 @@
         `;
     }
 
-    function showReportPreview(format) {
-        const employeeName = document.getElementById('employee-name-input').value.trim();
-        const companyName = document.getElementById('company-name').value.trim();
-        const monthYearValue = document.getElementById('month-year-picker').value;
-
-        if (!employeeName || !companyName || !monthYearValue) {
-            alert('Please enter Employee Name, Company Name, and select a Month/Year before generating a report.');
-            return;
-        }
-
-        currentDownloadFormat = format; 
-        const reportContentDiv = document.getElementById('report-preview-content');
-        reportContentDiv.innerHTML = generateReportHTML();
-        document.getElementById('report-preview-modal').classList.remove('hidden');
-        resetZoom();
-
-        const modalDownloadBtn = document.getElementById('modal-download-btn');
-        modalDownloadBtn.innerHTML = `<i class="fas fa-download"></i> Download ${format.toUpperCase()}`;
-        modalDownloadBtn.style.backgroundColor = (format === 'pdf') ? '#e74c3c' : '#f39c12';
-    }
-
     function hideReportPreview() {
         document.getElementById('report-preview-modal').classList.add('hidden');
     }
@@ -1228,7 +1234,8 @@
         document.getElementById('zoom-level').textContent = `100%`;
     }
 
-    async function downloadReport() { 
+    // Modified downloadReport to accept format directly
+    async function downloadReport(format) { 
         const reportElement = document.getElementById('report-preview-content');
 
         // Capture content at 1:1 scale for accurate A4 fitting
@@ -1255,7 +1262,7 @@
         const companyName = document.getElementById('company-name').value.trim() || 'Company';
         const filenamePrefix = `Salary_Report_${employeeName.replace(/\s/g, '_')}_${companyName.replace(/\s/g, '_')}_${document.getElementById('month-year-picker').value}`;
 
-        if (currentDownloadFormat === 'pdf') {
+        if (format === 'pdf') { // Use the passed format
             const { jsPDF } = window.jspdf;
             const imgData = canvas.toDataURL('image/jpeg', 1.0); 
 
@@ -1286,7 +1293,7 @@
             }
 
             pdf.save(`${filenamePrefix}.pdf`);
-        } else if (currentDownloadFormat === 'jpg') {
+        } else if (format === 'jpg') { // Use the passed format
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             const link = document.createElement('a');
             link.download = `${filenamePrefix}.jpg`;
