@@ -508,7 +508,7 @@
             opacity: 0.7;
         }
 
-        /* Responsive adjustments for mobile preview (display) */
+        /* Responsive adjustments for mobile preview */
         @media(max-width: 768px){
             body {
                 padding: 10px;
@@ -554,9 +554,10 @@
             #report-scrollable-content {
                 width: 100%;
                 padding: 5px 0;
+                overflow-x: auto; /* Allow horizontal scrolling for A4 content */
             }
             #report-preview-content {
-                width: 95%; /* Adjust width for mobile preview */
+                width: 210mm; /* Force A4 width for preview on mobile */
                 padding: 10mm;
             }
             .report-details div, .report-summary div {
@@ -565,20 +566,15 @@
             .report-watermark {
                 font-size: 2.5em;
             }
-            .report-table-container {
-                flex-direction: column; /* Tables stack vertically on mobile preview */
-                gap: 0;
-            }
-            .report-table {
-                width: 100%; /* Tables take full width when stacked */
-            }
+            /* REMOVED: flex-direction: column for .report-table-container
+               REMOVED: width: 100% for .report-table */
             .report-company-name {
                 font-size: 14pt;
                 max-width: 95%;
             }
         }
 
-        /* NEW: Force two-column layout for report capture (PDF/JPG) regardless of screen size */
+        /* Force two-column layout for report capture (PDF/JPG) regardless of screen size */
         .force-two-columns .report-table-container {
             flex-direction: row !important; /* Override to force side-by-side */
             flex-wrap: nowrap !important;   /* Prevent wrapping to ensure two columns */
@@ -1066,7 +1062,7 @@
 
     function generateReportHTML() {
         const employeeName = document.getElementById('employee-name-input').value.trim() || 'N/A';
-        const companyName = document.getElementById('company-name').value || 'N/A';
+        const companyName = document.getElementById('company-name').value.trim() || 'N/A';
         const salary = parseFloat(document.getElementById('salary').value) || 0;
         const fixedBaseHours = parseFloat(document.getElementById('fixedBaseHours').value) || 0; 
         const monthYearValue = document.getElementById('month-year-picker').value;
@@ -1263,7 +1259,10 @@
         // Apply capture-specific styles to force two columns
         reportElement.style.transform = 'scale(1)'; 
         reportElement.style.transformOrigin = 'top left';
-        reportScrollableContent.classList.add('force-two-columns'); // Add the class to force two columns for capture
+        // The force-two-columns class is now largely redundant for the tables themselves in the preview,
+        // but it's still useful for ensuring consistent behavior during html2canvas render for older browsers
+        // or if other responsive styles are added later. So, keep it here for download.
+        reportScrollableContent.classList.add('force-two-columns'); 
 
         const canvas = await html2canvas(reportElement, {
             scale: 2, // Higher scale for better resolution
