@@ -243,152 +243,29 @@
             bottom: 0;
             background-color: rgba(0, 0, 0, 0.7);
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column; /* Changed to column to stack controls and content */
+            align-items: center; /* Center items horizontally */
+            justify-content: flex-start; /* Align content to top */
             z-index: 1000;
-            overflow-y: auto;
             padding: 20px;
         }
 
-        #report-preview-content {
-            background-color: #fff;
-            width: 210mm; /* A4 width */
-            min-height: 297mm; /* A4 height */
-            padding: 15mm; /* Reduced padding for space */
-            box-shadow: 0 0 15px rgba(0,0,0,0.3);
-            position: relative;
-            font-family: 'Roboto', sans-serif;
-            color: #333;
-            font-size: 10pt; /* Reduced font size */
-            margin: 20px 0;
-            transform-origin: top left;
-            transition: transform 0.2s ease-out;
-        }
-
-        .report-header {
-            text-align: center;
-            margin-bottom: 15px; /* Reduced margin */
-        }
-        .report-header h2 {
-            font-size: 18pt; /* Reduced font size */
-            margin: 0;
-            color: #2c3e50;
-        }
-        .report-header p {
-            margin: 3pt 0; /* Reduced margin */
-            font-size: 9pt; /* Reduced font size */
-            color: #666;
-        }
-        .report-company-name {
-            font-size: 16pt;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 10pt;
-            color: #2c3e50;
-            word-break: break-word; /* Prevent overflow */
-            overflow-wrap: break-word; /* Alternate for older browsers */
-            max-width: 90%; /* Limit the width */
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-
-        .report-details {
-            margin-bottom: 10pt; /* Reduced margin */
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8pt; /* Reduced padding */
-        }
-        .report-details > div {
-            flex: 1 1 45%;
-            min-width: 180px; /* Adjusted min-width */
-            margin-bottom: 3pt; /* Reduced margin */
-        }
-         .report-details .left-section,
-         .report-details .right-section {
-            flex: 1;
-            min-width: unset; /* Allow flexibility */
-            padding: 0 10px; /* Add some padding */
-         }
-         .report-details .left-section {
-            text-align: left;
-         }
-         .report-details .right-section {
-            text-align: right;
-         }
-
-        .report-details p, .report-summary p {
-            margin: 1pt 0; /* Reduced margin */
-            font-size: 9pt; /* Reduced font size */
-        }
-        .report-table-container {
-            display: flex; /* Changed to flexbox */
-            justify-content: space-between; /* Space out tables */
-            gap: 10pt; /* Space between columns, reduced */
-            margin-bottom: 15pt; /* Reduced margin */
-            page-break-inside: avoid; /* Try to keep this container on one page */
-        }
-        .report-table {
-            width: 48%; /* Each table takes roughly half the width */
-            border-collapse: collapse;
-            background-color: #fff;
-            flex-shrink: 0; /* Prevent tables from shrinking too much */
-        }
-        .report-table th, .report-table td {
-            border: 1px solid #eee;
-            padding: 6pt; /* Reduced padding */
-            text-align: left;
-            font-size: 8pt; /* Reduced font size */
-        }
-        .report-table th {
-            background-color: #f5f5f5;
-            font-weight: bold;
-        }
-        /* Adjusted width for new columns */
-        .report-table th:nth-child(1), .report-table td:nth-child(1) { /* Date / Day / Shift */
-            width: 50%; /* Increased width for combined info */
-        }
-        .report-table th:nth-child(2), .report-table td:nth-child(2) { /* Hours Worked */
-            width: 25%;
-            text-align: center;
-        }
-        .report-table th:nth-child(3), .report-table td:nth-child(3) { /* Daily Pay */
-            width: 25%;
-            text-align: right;
-        }
-
-
-        .report-total-box {
-            background-color: #4a90e2;
-            color: #fff;
-            padding: 12pt; /* Reduced padding */
-            text-align: right;
-            font-size: 14pt; /* Reduced font size */
-            font-weight: bold;
-            border-radius: 5px;
-            margin-top: 15pt; /* Reduced margin */
-        }
-        .report-footer {
-            margin-top: 30pt; /* Reduced margin */
-            font-size: 9pt; /* Reduced font size */
-        }
-        .report-footer p {
-            margin-bottom: 10pt; /* Reduced margin */
-        }
-
-       .report-controls {
-            margin-top: 20px;
+        .report-controls {
+            margin-top: 0; /* Remove top margin, handled by modal padding */
             text-align: center;
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            justify-content: space-between; /* Space out the buttons */
-            align-items: center; /* Vertically center items */
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 15px; /* Space between controls and report */
-            padding: 0 10px; /* Add some horizontal padding */
+            padding: 10px; /* Add padding to controls */
+            background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white background */
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: calc(min(95%, 900px)); /* Match container width for better look */
+            flex-shrink: 0; /* Prevent controls from shrinking */
+            z-index: 1001; /* Ensure controls are above scrollable content */
         }
         .zoom-controls {
             display: flex;
@@ -408,6 +285,145 @@
             min-width: 40px;
             text-align: center;
         }
+
+        /* Container for scrollable report content */
+        #report-scrollable-content {
+            flex-grow: 1; /* Allows this div to take up remaining space */
+            overflow-y: auto; /* Makes only the report content scrollable */
+            width: calc(min(95%, 900px)); /* Match container width for better look */
+            display: flex; /* Flex to center content */
+            justify-content: center; /* Center horizontally */
+            align-items: flex-start; /* Align report to top within its scrollable area */
+            padding: 10px 0; /* Add some vertical padding for content */
+            position: relative; /* Needed for watermark z-index context */
+        }
+
+        #report-preview-content {
+            background-color: #fff;
+            width: 210mm; /* A4 width */
+            /* min-height: 297mm; REMOVED: let content dictate height */
+            padding: 15mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            position: relative;
+            font-family: 'Roboto', sans-serif;
+            color: #333;
+            font-size: 10pt;
+            margin: 0; /* Removed margin as it's now handled by #report-scrollable-content padding */
+            transform-origin: top left;
+            transition: transform 0.2s ease-out;
+            flex-shrink: 0; /* Prevents content from shrinking too much if space is tight */
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .report-header h2 {
+            font-size: 18pt;
+            margin: 0;
+            color: #2c3e50;
+        }
+        .report-header p {
+            margin: 3pt 0;
+            font-size: 9pt;
+            color: #666;
+        }
+        .report-company-name {
+            font-size: 16pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10pt;
+            color: #2c3e50;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .report-details {
+            margin-bottom: 10pt;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8pt;
+        }
+        .report-details > div {
+            flex: 1 1 45%;
+            min-width: 180px;
+            margin-bottom: 3pt;
+        }
+         .report-details .left-section,
+         .report-details .right-section {
+            flex: 1;
+            min-width: unset;
+            padding: 0 10px;
+         }
+         .report-details .left-section {
+            text-align: left;
+         }
+         .report-details .right-section {
+            text-align: right;
+         }
+
+        .report-details p, .report-summary p {
+            margin: 1pt 0;
+            font-size: 9pt;
+        }
+        .report-table-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 10pt;
+            margin-bottom: 15pt;
+            page-break-inside: avoid;
+        }
+        .report-table {
+            width: 48%;
+            border-collapse: collapse;
+            background-color: #fff;
+            flex-shrink: 0;
+        }
+        .report-table th, .report-table td {
+            border: 1px solid #eee;
+            padding: 6pt;
+            text-align: left;
+            font-size: 8pt;
+        }
+        .report-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        .report-table th:nth-child(1), .report-table td:nth-child(1) {
+            width: 50%;
+        }
+        .report-table th:nth-child(2), .report-table td:nth-child(2) {
+            width: 25%;
+            text-align: center;
+        }
+        .report-table th:nth-child(3), .report-table td:nth-child(3) {
+            width: 25%;
+            text-align: right;
+        }
+
+        .report-total-box {
+            background-color: #4a90e2;
+            color: #fff;
+            padding: 12pt;
+            text-align: right;
+            font-size: 14pt;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-top: 15pt;
+        }
+        .report-footer {
+            margin-top: 30pt;
+            font-size: 9pt;
+        }
+        .report-footer p {
+            margin-bottom: 10pt;
+        }
+
         /* Style for individual download buttons */
         #modal-download-pdf-btn, #modal-download-jpg-btn {
             color: #fff;
@@ -440,7 +456,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-
         /* Close button styles */
         #modal-close-btn {
             background-color: #7f8c8d;
@@ -467,7 +482,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-
         /* Keyframes for pulse animation */
         @keyframes pulse {
             0% {
@@ -486,8 +500,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 3.5em; /* Adjusted size */
-            color: rgba(0, 0, 0, 0.05); /* Very light grey */
+            font-size: 3.5em;
+            color: rgba(0, 0, 0, 0.05);
             pointer-events: none;
             user-select: none;
             white-space: nowrap;
@@ -522,10 +536,29 @@
             .salary-display h2 {
                 font-size: 1.6rem;
             }
+            #report-preview-modal {
+                padding: 10px;
+            }
+            .report-controls {
+                width: 100%;
+                margin-bottom: 10px;
+                padding: 8px;
+            }
+            .report-controls button,
+            .zoom-controls {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            .zoom-controls {
+                order: -1;
+            }
+            #report-scrollable-content {
+                width: 100%;
+                padding: 5px 0;
+            }
             #report-preview-content {
-                width: 95%; /* Adjust for smaller screens in preview */
+                width: 95%;
                 padding: 10mm;
-                min-height: unset;
             }
             .report-details div, .report-summary div {
                 flex: 1 1 100%;
@@ -533,29 +566,16 @@
             .report-watermark {
                 font-size: 2.5em;
             }
-            .report-controls {
-                flex-direction: column;
-                justify-content: center; /* Center items when stacked */
-                align-items: center;
-            }
-            .report-controls button,
-            .zoom-controls {
-                width: 100%; /* Make buttons full width */
-                margin-bottom: 10px; /* Add space between stacked items */
-            }
-            .zoom-controls {
-                order: -1; /* Put zoom controls at the top of the stacked items */
-            }
             .report-table-container {
-                flex-direction: column; /* Stack columns on small screens */
-                gap: 0; /* Remove gap when stacked */
+                flex-direction: column;
+                gap: 0;
             }
             .report-table {
-                width: 100%; /* Full width when stacked */
+                width: 100%;
             }
             .report-company-name {
-                font-size: 14pt; /* Smaller font on mobile */
-                max-width: 95%; /* Ensure it fits on mobile */
+                font-size: 14pt;
+                max-width: 95%;
             }
         }
     </style>
@@ -670,8 +690,10 @@
             <button id="modal-download-jpg-btn" onclick="downloadReport('jpg')"><i class="fas fa-file-image"></i> Download JPG</button>
             <button id="modal-close-btn" onclick="hideReportPreview()"><i class="fas fa-times"></i> Close</button>
         </div>
-        <div id="report-preview-content">
-            </div>
+        <div id="report-scrollable-content">
+            <div id="report-preview-content">
+                </div>
+        </div>
     </div>
 
 </div>
@@ -1015,7 +1037,6 @@
     }
 
     // --- Report Generation and Download ---
-    // Changed showReportPreview to only generate and display the preview
     function showReportPreview() {
         const employeeName = document.getElementById('employee-name-input').value.trim();
         const companyName = document.getElementById('company-name').value.trim();
@@ -1030,10 +1051,6 @@
         reportContentDiv.innerHTML = generateReportHTML();
         document.getElementById('report-preview-modal').classList.remove('hidden');
         resetZoom();
-
-        // Optionally, you could highlight the PDF button here,
-        // but now there are two distinct buttons, so no specific highlighting is needed
-        // unless you want a default animation for one of them.
     }
 
     function generateReportHTML() {
@@ -1234,7 +1251,6 @@
         document.getElementById('zoom-level').textContent = `100%`;
     }
 
-    // Modified downloadReport to accept format directly
     async function downloadReport(format) { 
         const reportElement = document.getElementById('report-preview-content');
 
