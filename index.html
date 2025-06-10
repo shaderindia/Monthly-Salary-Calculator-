@@ -418,9 +418,20 @@
         .report-footer {
             margin-top: 30pt;
             font-size: 9pt;
+            display: flex; /* Make footer a flex container */
+            justify-content: space-between; /* Space items out */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens/print */
         }
         .report-footer p {
             margin-bottom: 10pt;
+        }
+        .report-footer .left-footer-section {
+            flex: 1 1 45%; /* Take up nearly half width */
+            text-align: left;
+        }
+        .report-footer .right-footer-section {
+            flex: 1 1 45%; /* Take up nearly half width */
+            text-align: right;
         }
 
         /* Style for individual download buttons */
@@ -571,6 +582,16 @@
             .report-company-name {
                 font-size: 14pt;
                 max-width: 95%;
+            }
+            .report-footer {
+                flex-direction: column; /* Stack elements on mobile */
+                align-items: flex-start;
+            }
+            .report-footer .left-footer-section,
+            .report-footer .right-footer-section {
+                text-align: left; /* Align text to left on mobile */
+                width: 100%;
+                margin-bottom: 5pt; /* Add some space between stacked sections */
             }
         }
 
@@ -1073,7 +1094,7 @@
 
         const [yearStr, monthStr] = monthYearValue.split('-');
         const year = parseInt(yearStr);
-        const month = parseInt(monthStr);
+        const month = parseInt(month); // Month is 1-indexed
 
         const weekendRate = parseFloat(document.getElementById('weekendRate').value) || 1;
         const exchangeRate = parseFloat(document.getElementById('exchange-rate').value) || 1;
@@ -1089,20 +1110,20 @@
         let totalWeekendOvertimeHours = 0; 
         let totalRegularHoursForReport = 0; 
         let totalWeekendHours = 0; 
-        let daysWorked = 0; // New: Counter for days worked
-        let daysOff = 0;    // New: Counter for days off
+        let daysWorked = 0; 
+        let daysOff = 0;    
 
         const hourlyRate = (fixedBaseHours > 0) ? (salary / fixedBaseHours) : 0;
 
         const dailyEntries = [];
 
-        const calendarHoursSelects = document.querySelectorAll('#calendar-container .hours-select');
-        
-        calendarHoursSelects.forEach(hoursSelect => {
-            const day = parseInt(hoursSelect.dataset.day);
-            const hrs = parseFloat(hoursSelect.value) || 0;
-            const isWeekend = hoursSelect.dataset.isWeekend === 'true';
+        // Get all calendar days regardless of hours entered
+        for (let day = 1; day <= daysInMonth; day++) {
+            const hoursSelect = document.querySelector(`#calendar-container .hours-select[data-day="${day}"]`);
             const shiftSelect = document.querySelector(`#calendar-container .shift-select[data-day="${day}"]`);
+
+            const hrs = parseFloat(hoursSelect ? hoursSelect.value : '') || 0;
+            const isWeekend = hoursSelect ? (hoursSelect.dataset.isWeekend === 'true') : false;
             const shiftType = shiftSelect ? shiftSelect.options[shiftSelect.selectedIndex].text : 'N/A';
             
             dailyEntries.push({
@@ -1111,19 +1132,19 @@
                 shift: shiftType,
                 isWeekend: isWeekend
             });
-        });
+        }
 
-        // Sort by day to ensure correct order
-        dailyEntries.sort((a, b) => a.day - b.b);
+        // Sort by day to ensure correct order (already sorted by loop, but good practice)
+        dailyEntries.sort((a, b) => a.day - b.day);
 
         const dailyEntriesHtmlLeft = [];
         const dailyEntriesHtmlRight = [];
 
         // Strict split: First 15 days on left, rest on right
         const fixedLeftTableDays = 15;
-        let splitPoint = Math.min(daysInMonth, fixedLeftTableDays); // If month has <=15 days, all go left. Otherwise, 15 go left.
+        let splitPoint = Math.min(daysInMonth, fixedLeftTableDays); 
 
-        dailyEntries.forEach((data, index) => {
+        dailyEntries.forEach((data) => {
             const dateObj = new Date(year, month - 1, data.day);
             const isWeekend = data.isWeekend;
             const multiplier = isWeekend ? weekendRate : 1; 
@@ -1170,7 +1191,7 @@
                 </tr>
             `;
 
-            if (data.day <= splitPoint) { // Use data.day to ensure we're checking the actual day number
+            if (data.day <= splitPoint) { 
                 dailyEntriesHtmlLeft.push(rowHtml);
             } else {
                 dailyEntriesHtmlRight.push(rowHtml);
@@ -1235,10 +1256,14 @@
             </div>
             
             <div class="report-footer">
-                <p><strong>Days Worked:</strong> ${daysWorked} days</p>
-                <p><strong>Days Off:</strong> ${daysOff} days</p>
-                <p><strong>Employee Signature:</strong> ___________________________________________</p>
-                <p><strong>Date of Salary Received:</strong> ___________________________________</p>
+                <div class="left-footer-section">
+                    <p><strong>Employee Signature:</strong> ___________________________________________</p>
+                    <p><strong>Date of Salary Received:</strong> ___________________________________</p>
+                </div>
+                <div class="right-footer-section">
+                    <p><strong>Days Worked:</strong> ${daysWorked} days</p>
+                    <p><strong>Days Off:</strong> ${daysOff} days</p>
+                </div>
             </div>
         `;
     }
