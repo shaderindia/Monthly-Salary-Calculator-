@@ -1088,7 +1088,9 @@
         let totalWeekdayOvertimeHours = 0;
         let totalWeekendOvertimeHours = 0; 
         let totalRegularHoursForReport = 0; 
-        let totalWeekendHours = 0; // NEW: Initialize total weekend hours
+        let totalWeekendHours = 0; 
+        let daysWorked = 0; // New: Counter for days worked
+        let daysOff = 0;    // New: Counter for days off
 
         const hourlyRate = (fixedBaseHours > 0) ? (salary / fixedBaseHours) : 0;
 
@@ -1134,7 +1136,7 @@
             totalHrsOverall += hrs;
             totalWeightedHours += hrs * multiplier;
             totalRegularHoursForReport += regularHrsToday; 
-            if (isWeekend) { // NEW: Accumulate all weekend hours
+            if (isWeekend) { 
                 totalWeekendHours += hrs;
             }
 
@@ -1144,6 +1146,13 @@
                 } else {
                     totalWeekdayOvertimeHours += overtimeHrsToday;
                 }
+            }
+            
+            // Calculate days worked and days off
+            if (hrs > 0) {
+                daysWorked++;
+            } else {
+                daysOff++;
             }
 
             const dailyPay = (hrs * hourlyRate * multiplier).toFixed(2);
@@ -1226,6 +1235,8 @@
             </div>
             
             <div class="report-footer">
+                <p><strong>Days Worked:</strong> ${daysWorked} days</p>
+                <p><strong>Days Off:</strong> ${daysOff} days</p>
                 <p><strong>Employee Signature:</strong> ___________________________________________</p>
                 <p><strong>Date of Salary Received:</strong> ___________________________________</p>
             </div>
