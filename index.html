@@ -488,21 +488,6 @@
             opacity: 0.7;
         }
 
-        .login-toggle {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #666;
-        }
-        .login-toggle a {
-            color: #4a90e2;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .login-toggle a:hover {
-            text-decoration: underline;
-        }
-
         /* Responsive adjustments */
         @media(max-width: 768px){
             body {
@@ -543,6 +528,16 @@
             }
             .report-controls {
                 flex-direction: column;
+                justify-content: center; /* Center items when stacked */
+                align-items: center;
+            }
+            .report-controls button,
+            .zoom-controls {
+                width: 100%; /* Make buttons full width */
+                margin-bottom: 10px; /* Add space between stacked items */
+            }
+            .zoom-controls {
+                order: -1; /* Put zoom controls at the top of the stacked items */
             }
             .report-table-container {
                 flex-direction: column; /* Stack columns on small screens */
@@ -567,58 +562,25 @@
         <p id="motivational-message" style="font-style: italic; font-size: 1.1rem;"></p>
     </div>
 
-    <div id="auth-section" class="card">
-        <div id="login-form">
-            <h2>Login</h2>
-            <div class="form-group">
-                <label for="login-username">Username:</label>
-                <input type="text" id="login-username" placeholder="Enter your username" />
-            </div>
-            <div class="form-group">
-                <label for="login-password">Password:</label>
-                <input type="password" id="login-password" placeholder="Enter your password" />
-            </div>
-            <button onclick="loginUser()">Login</button>
-            <div class="login-toggle">
-                Don't have an account? <a href="#" onclick="showRegisterForm()">Register here</a>
-            </div>
-        </div>
-
-        <div id="register-form" class="hidden">
-            <h2>Register</h2>
-            <div class="form-group">
-                <label for="register-username">Choose Username:</label>
-                <input type="text" id="register-username" placeholder="Choose a username" />
-            </div>
-            <div class="form-group">
-                <label for="register-password">Choose Password:</label>
-                <input type="password" id="register-password" placeholder="Choose a password" />
-            </div>
-            <button onclick="registerUser()">Register</button>
-            <div class="login-toggle">
-                Already have an account? <a href="#" onclick="showLoginForm()">Login here</a>
-            </div>
-        </div>
-        
-        <p id="user-count" style="text-align: center; margin-top: 15px; font-size: 0.9em; color: #777;"></p>
-    </div>
-
-    <div id="app-section" class="card hidden">
+    <div id="app-section" class="card">
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="margin:0;">Welcome, <span id="user-name"></span>!</h2>
-            <button style="background-color:#e74c3c; padding: 10px 18px;" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <h2 style="margin:0;">Welcome, <span id="employee-display-name">Guest</span>!</h2>
         </div>
 
         <div style="text-align: center; margin-bottom: 25px; padding: 10px; background-color: #f8f8f8; border-radius: 8px;">
             <p style="margin: 5px 0;"><strong>Today's Date:</strong> <span id="current-date"></span></p>
-            <p style="margin: 5px 0;"><strong>Logged in as:</strong> <span id="current-user-login"></span></p>
+            <p style="margin: 5px 0;"><strong>Employee:</strong> <span id="employee-info-display">N/A</span></p>
         </div>
 
         <div class="section">
             <div class="form-group">
+                <label for="employee-name-input">Employee Name:</label>
+                <input type="text" id="employee-name-input" placeholder="Your Name" oninput="updateEmployeeInfo(); generateCalendarAndLoadData();" />
+            </div>
+            <div class="form-group">
                 <label for="company-name">Company Name:</label>
-                <input type="text" id="company-name" placeholder="Your Company Name" oninput="recalculateSalary()" />
+                <input type="text" id="company-name" placeholder="Your Company Name" oninput="updateEmployeeInfo(); generateCalendarAndLoadData();" />
             </div>
             <div class="form-group">
                 <label for="salary">Base Salary (RON):</label>
@@ -709,7 +671,6 @@
 
 <script>
     // Global variables
-    let currentUser = null;
     let currentZoom = 1.0; // Initial zoom level for report preview
     let currentDownloadFormat = 'pdf'; // Default download format
 
@@ -729,55 +690,661 @@
             "Strive not to be a success, but rather to be of value. - Albert Einstein",
             "Keep pushing forward! You're doing great.",
             "Your dedication today determines your success tomorrow.",
-            "Every hour you put in brings you closer to your goals.",
             "Make each day your masterpiece."
         ];
         const msg = messages[Math.floor(Math.random() * messages.length)];
         document.getElementById("motivational-message").textContent = msg;
     }
 
-    // --- User Authentication and Management ---
-    function getUsers() {
-        return JSON.parse(localStorage.getItem("users") || "[]");
-    }
+    // --- Employee/Company Info Management ---
+    function updateEmployeeInfo() {
+        const employeeNameInput = document.getElementById('employee-name-input').value.trim();
+        const companyNameInput = document.getElementById('company-name').value.trim();
 
-    function saveUsers(usersArray) {
-        localStorage.setItem("users", JSON.stringify(usersArray));
-        updateUserCount();
-    }
-
-    function showLoginForm() {
-        document.getElementById("login-form").classList.remove("hidden");
-        document.getElementById("register-form").classList.add("hidden");
-    }
-
-    function showRegisterForm() {
-        document.getElementById("login-form").classList.add("hidden");
-        document.getElementById("register-form").classList.remove("hidden");
-    }
-
-    function registerUser() {
-        const username = document.getElementById("register-username").value.trim();
-        const password = document.getElementById("register-password").value.trim();
-
-        if (!username || !password) {
-            alert("Please enter both username and password to register.");
-            return;
-        }
-
-        let users = getUsers();
-        if (users.some(u => u.username === username)) {
-            alert("Username already exists. Please choose a different one.");
-            return;
-        }
-
-        users.push({ username, password });
-        saveUsers(users);
+        document.getElementById('employee-display-name').textContent = employeeNameInput || 'Guest';
         
-        alert("Registration successful! You are now logged in.");
-        document.getElementById("login-username").value = username; // Pre-fill login form
-        document.getElementById("login-password").value = password;
-        loginUser(); // Automatically log in the new user
+        let infoText = '';
+        if (employeeNameInput && companyNameInput) {
+            infoText = `${employeeNameInput} / ${companyNameInput}`;
+        } else if (employeeNameInput) {
+            infoText = employeeNameInput;
+        } else if (companyNameInput) {
+            infoText = `Company: ${companyNameInput}`;
+        } else {
+            infoText = 'N/A';
+        }
+        document.getElementById('employee-info-display').textContent = infoText;
     }
 
-    function loginUser() {
+
+    // --- Calendar Generation and Data Handling ---
+    function generateCalendarAndLoadData() {
+        const salary = parseFloat(document.getElementById("salary").value);
+        const fixedBaseHours = parseFloat(document.getElementById("fixedBaseHours").value);
+        const monthYearValue = document.getElementById("month-year-picker").value;
+        
+        // If no month/year is selected, display a prompt and stop
+        if (!monthYearValue) {
+             document.getElementById("calendar-container").innerHTML = '<p style="text-align: center; color: #888;">Please select a Month and Year above to generate the calendar.</p>';
+            recalculateSalary(); // Recalculate to clear salary output if needed
+            return;
+        }
+
+        const [yearStr, monthStr] = monthYearValue.split('-');
+        const year = parseInt(yearStr);
+        const month = parseInt(monthStr); // Month is 1-indexed from input type="month"
+
+        // Basic validation for salary and fixedBaseHours, but calendar generation proceeds if month/year are valid
+        if (isNaN(salary) || isNaN(fixedBaseHours) || fixedBaseHours <= 0) { 
+            console.warn("Base Salary or Fixed Base Hours are invalid. Calendar will generate, but calculations may be 0.");
+        }
+
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const firstDayOfMonth = new Date(year, month - 1, 1).getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+        let html = '<table><thead><tr>';
+        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+            html += `<th>${day}</th>`;
+        });
+        html += '</tr></thead><tbody><tr>';
+
+        // Add empty cells for days before the 1st of the month
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            html += '<td></td>';
+        }
+
+        // Generate options for hours dropdown (0 to 16)
+        let hoursOptions = '<option value="">Hrs</option>';
+        for (let h = 0; h <= 16; h++) {
+            hoursOptions += `<option value="${h}">${h} hrs</option>`;
+        }
+
+        const shiftOptions = `
+            <option value="">Shift</option>
+            <option value="8">8 hrs</option>
+            <option value="12">12 hrs</option>
+            <option value="0">Off</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="Day">Day</option>
+            <option value="Night">Night</option>
+            <option value="OT">OT</option>
+        `;
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateObj = new Date(year, month - 1, day);
+            const weekday = dateObj.getDay(); // 0-6 (Sun-Sat)
+            const isWeekend = (weekday === 0 || weekday === 6);
+            const cellClass = isWeekend ? 'weekend' : '';
+
+            html += `
+                <td class="${cellClass}">
+                    <div style="font-weight:bold; font-size:1.1em; margin-bottom:5px;">${day}${getDateSuffix(day)}</div>
+                    <select class="calendar-day-select hours-select" onchange="recalculateSalary()" data-day="${day}" data-is-weekend="${isWeekend}">
+                        ${hoursOptions}
+                    </select>
+                    <select class="calendar-day-select shift-select" onchange="setHoursFromShift(this)" data-day="${day}">
+                        ${shiftOptions}
+                    </select>
+                </td>
+            `;
+
+            // Check if it's the last day of the week AND not the very last day of the month
+            if ((firstDayOfMonth + day) % 7 === 0 && day < daysInMonth) {
+                html += '</tr><tr>';
+            }
+        }
+
+        // Fill remaining cells after the last day of the month
+        const totalCellsOccupied = firstDayOfMonth + daysInMonth;
+        const remainingCellsInLastRow = 7 - (totalCellsOccupied % 7);
+        if (remainingCellsInLastRow < 7) { 
+            for (let i = 0; i < remainingCellsInLastRow; i++) {
+                html += '<td></td>';
+            }
+        }
+
+        html += '</tr></tbody></table>';
+        document.getElementById('calendar-container').innerHTML = html;
+
+        loadMonthData(); // Load previously saved data for this month/year
+    }
+
+    function setHoursFromShift(shiftSelectElement) {
+        const selectedValue = shiftSelectElement.value;
+        const hoursSelectElement = shiftSelectElement.previousElementSibling;
+
+        const shiftHoursMap = {
+            '8': '8',
+            '12': '12',
+            '0': '0',
+            'A': '8',
+            'B': '8',
+            'C': '8',
+            'Day': '12',
+            'Night': '12',
+            'OT': ''
+        };
+
+        if (shiftHoursMap[selectedValue] !== undefined) {
+            hoursSelectElement.value = shiftHoursMap[selectedValue];
+        } else {
+            hoursSelectElement.value = ""; 
+        }
+        recalculateSalary();
+    }
+
+    function getDateSuffix(day) {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
+        }
+    }
+
+    // --- Salary Calculation ---
+    function recalculateSalary() {
+        const salary = parseFloat(document.getElementById('salary').value) || 0;
+        const fixedBaseHours = parseFloat(document.getElementById('fixedBaseHours').value) || 0;
+        const exchangeRate = parseFloat(document.getElementById('exchange-rate').value) || 1;
+        
+        const weekendRate = parseFloat(document.getElementById('weekendRate').value) || 1; 
+
+        const hoursSelects = document.querySelectorAll('#calendar-container td .hours-select');
+
+        let totalHrs = 0; 
+        let totalWeightedHours = 0; 
+
+        const hourlyRate = (fixedBaseHours > 0) ? (salary / fixedBaseHours) : 0;
+
+        hoursSelects.forEach((select) => {
+            const hrs = parseFloat(select.value) || 0;
+            
+            const isWeekend = select.dataset.isWeekend === 'true'; 
+            const m = isWeekend ? weekendRate : 1; 
+            
+            totalHrs += hrs; 
+            totalWeightedHours += hrs * m; 
+        });
+
+        const totalSalaryRON = totalWeightedHours * hourlyRate;
+        const totalSalaryINR = totalSalaryRON * exchangeRate;
+
+        document.getElementById('hourly-rate').textContent = `Calculated Hourly Rate: ${hourlyRate.toFixed(2)} RON`;
+        document.getElementById('total-salary').textContent = `Total Salary: ${totalSalaryRON.toFixed(2)} RON`;
+        document.getElementById('total-salary-in-rupees').textContent = `Total Salary: ${totalSalaryINR.toFixed(2)} INR`;
+    }
+
+    // --- Data Persistence ---
+    function generateDataKey() {
+        const employeeName = document.getElementById('employee-name-input').value.trim();
+        const companyName = document.getElementById('company-name').value.trim();
+        const monthYearValue = document.getElementById('month-year-picker').value;
+
+        if (!employeeName || !companyName || !monthYearValue) {
+            return null; // Cannot generate key without essential info
+        }
+
+        const [year, month] = monthYearValue.split('-');
+        return `${employeeName.replace(/\s/g, '_')}-${companyName.replace(/\s/g, '_')}-${year}-${month}-data`;
+    }
+
+    function saveMonthData() {
+        const dataKey = generateDataKey();
+        if (!dataKey) {
+            alert('Please enter Employee Name, Company Name, and select a Month/Year before saving data.');
+            return;
+        }
+
+        const companyName = document.getElementById('company-name').value;
+        const baseSalary = document.getElementById('salary').value;
+        const fixedBaseHours = document.getElementById('fixedBaseHours').value; 
+        const weekendRate = document.getElementById('weekendRate').value;
+        const exchangeRate = document.getElementById('exchange-rate').value;
+
+        const dayData = [];
+        document.querySelectorAll('#calendar-container td').forEach(td => {
+            const hoursSelect = td.querySelector('.hours-select');
+            const shiftSelect = td.querySelector('.shift-select');
+            if (hoursSelect && shiftSelect) { 
+                const dayNumber = parseInt(hoursSelect.dataset.day); 
+                const isWeekend = hoursSelect.dataset.isWeekend === 'true'; 
+                dayData.push({
+                    day: dayNumber,
+                    hours: hoursSelect.value,
+                    shift: shiftSelect.value,
+                    isWeekend: isWeekend 
+                });
+            }
+        });
+
+        const monthData = {
+            companyName: companyName,
+            baseSalary: baseSalary,
+            fixedBaseHours: fixedBaseHours, 
+            weekendRate: weekendRate,
+            exchangeRate: exchangeRate,
+            dayEntries: dayData
+        };
+        localStorage.setItem(dataKey, JSON.stringify(monthData));
+        const monthYearValue = document.getElementById('month-year-picker').value;
+        const [year, month] = monthYearValue.split('-');
+        alert(`Data for ${new Date(year, month - 1).toLocaleString('default', { month: 'long' })} ${year} saved successfully!`);
+    }
+
+    function loadMonthData() {
+        const dataKey = generateDataKey();
+        
+        if (!dataKey) {
+            // Clear inputs if no valid key can be formed (e.g., employee/company name not entered yet)
+            document.getElementById('company-name').value = ''; // This will be set by updateEmployeeInfo() next
+            document.getElementById('salary').value = '';
+            document.getElementById('fixedBaseHours').value = '160'; 
+            document.getElementById('weekendRate').value = '1';
+            document.getElementById('exchange-rate').value = '18.5';
+            clearAllHours(); 
+            return;
+        }
+
+        const storedData = localStorage.getItem(dataKey);
+        
+        if (storedData) {
+            const monthData = JSON.parse(storedData);
+
+            document.getElementById('company-name').value = monthData.companyName || '';
+            document.getElementById('salary').value = monthData.baseSalary || '';
+            document.getElementById('fixedBaseHours').value = monthData.fixedBaseHours || '160'; 
+            document.getElementById('weekendRate').value = monthData.weekendRate || '1';
+            document.getElementById('exchange-rate').value = monthData.exchangeRate || '18.5';
+
+            monthData.dayEntries.forEach((entry) => {
+                const hoursSelectElement = document.querySelector(`#calendar-container .hours-select[data-day="${entry.day}"]`);
+                const shiftSelectElement = document.querySelector(`#calendar-container .shift-select[data-day="${entry.day}"]`);
+
+                if (hoursSelectElement) {
+                    hoursSelectElement.value = entry.hours || '';
+                }
+                if (shiftSelectElement) {
+                    shiftSelectElement.value = entry.shift || '';
+                }
+            });
+        } else {
+            // If no stored data, reset inputs to default/empty, but retain employee/company name inputs
+            document.getElementById('salary').value = '';
+            document.getElementById('fixedBaseHours').value = '160'; 
+            document.getElementById('weekendRate').value = '1';
+            document.getElementById('exchange-rate').value = '18.5';
+            clearAllHours(); 
+        }
+        recalculateSalary();
+        convertCurrency();
+    }
+
+    // --- Currency Conversion ---
+    function updateExchangeRate() {
+        recalculateSalary();
+        convertCurrency();
+    }
+
+    function convertCurrency() {
+        const amount = parseFloat(document.getElementById('amount-input').value) || 0;
+        const rate = parseFloat(document.getElementById('exchange-rate').value) || 1;
+        const currency = document.getElementById('currency-select').value;
+        let result, fromSymbol, toSymbol;
+
+        if (currency === 'INR') {
+            result = amount * rate;
+            fromSymbol = 'RON';
+            toSymbol = 'INR';
+        } else {
+            result = amount / rate;
+            fromSymbol = 'INR';
+            toSymbol = 'RON';
+        }
+
+        document.getElementById('conversion-result').textContent = `${amount.toFixed(2)} ${fromSymbol} = ${result.toFixed(2)} ${toSymbol}`;
+    }
+
+    // --- Report Generation and Download ---
+    function generateReportHTML() {
+        const employeeName = document.getElementById('employee-name-input').value.trim() || 'N/A';
+        const companyName = document.getElementById('company-name').value || 'N/A';
+        const salary = parseFloat(document.getElementById('salary').value) || 0;
+        const fixedBaseHours = parseFloat(document.getElementById('fixedBaseHours').value) || 0; 
+        const monthYearValue = document.getElementById('month-year-picker').value;
+        
+        if (!monthYearValue) {
+            return "<p style='text-align: center; color: #e74c3c;'>Please select a month and year to generate the report.</p>";
+        }
+
+        const [yearStr, monthStr] = monthYearValue.split('-');
+        const year = parseInt(yearStr);
+        const month = parseInt(monthStr);
+
+        const weekendRate = parseFloat(document.getElementById('weekendRate').value) || 1;
+        const exchangeRate = parseFloat(document.getElementById('exchange-rate').value) || 1;
+
+        const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        let totalHrsOverall = 0;
+        let totalWeightedHours = 0;
+        const standardHoursPerDay = 8; 
+
+        let totalWeekdayOvertimeHours = 0;
+        let totalWeekendOvertimeHours = 0;
+        let totalRegularHoursForReport = 0; 
+
+        const hourlyRate = (fixedBaseHours > 0) ? (salary / fixedBaseHours) : 0;
+
+        const dailyEntries = [];
+
+        const calendarHoursSelects = document.querySelectorAll('#calendar-container .hours-select');
+        
+        calendarHoursSelects.forEach(hoursSelect => {
+            const day = parseInt(hoursSelect.dataset.day);
+            const hrs = parseFloat(hoursSelect.value) || 0;
+            const isWeekend = hoursSelect.dataset.isWeekend === 'true';
+            const shiftSelect = document.querySelector(`#calendar-container .shift-select[data-day="${day}"]`);
+            const shiftType = shiftSelect ? shiftSelect.options[shiftSelect.selectedIndex].text : 'N/A';
+            
+            dailyEntries.push({
+                day: day,
+                hours: hrs,
+                shift: shiftType,
+                isWeekend: isWeekend
+            });
+        });
+
+        // Sort by day to ensure correct order
+        dailyEntries.sort((a, b) => a.day - b.day);
+
+        const dailyEntriesHtmlLeft = [];
+        const dailyEntriesHtmlRight = [];
+
+        // Determine split point: aim for 15 days on the left, but adjust for balance
+        let splitPoint;
+        if (daysInMonth <= 15) { 
+            splitPoint = daysInMonth;
+        } else {
+            const idealSplit = 15;
+            const remaining = daysInMonth - idealSplit;
+            if (remaining > 0 && remaining <= 5) { 
+                splitPoint = Math.ceil(daysInMonth / 2);
+            } else {
+                splitPoint = idealSplit;
+            }
+            if (daysInMonth > 15 && splitPoint === daysInMonth) {
+                splitPoint = daysInMonth - 1;
+            }
+        }
+
+
+        dailyEntries.forEach((data, index) => {
+            const dateObj = new Date(year, month - 1, data.day);
+            const isWeekend = data.isWeekend;
+            const multiplier = isWeekend ? weekendRate : 1; 
+            const hrs = data.hours;
+            const shiftType = data.shift;
+
+            let regularHrsToday = Math.min(hrs, standardHoursPerDay);
+            let overtimeHrsToday = Math.max(0, hrs - standardHoursPerDay);
+
+            totalHrsOverall += hrs;
+            totalWeightedHours += hrs * multiplier;
+            totalRegularHoursForReport += regularHrsToday; 
+
+            if (overtimeHrsToday > 0) {
+                if (isWeekend) {
+                    totalWeekendOvertimeHours += overtimeHrsToday;
+                } else {
+                    totalWeekdayOvertimeHours += overtimeHrsToday;
+                }
+            }
+
+            const dailyPay = (hrs * hourlyRate * multiplier).toFixed(2);
+            const dayOfWeek = dateObj.toLocaleDateString('en-GB', { weekday: 'short' });
+            
+            // New combined string for Date, Day, and Shift Type
+            const dateDayShift = `${dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} (${dayOfWeek}) - ${shiftType}`;
+            const hoursWorkedDisplay = `${hrs} hrs${overtimeHrsToday > 0 ? ` (+${overtimeHrsToday} OT)` : ''}`;
+
+            const rowHtml = `
+                <tr>
+                    <td>${dateDayShift}</td>
+                    <td>${hoursWorkedDisplay}</td>
+                    <td>${dailyPay} RON</td>
+                </tr>
+            `;
+
+            if (index < splitPoint) { 
+                dailyEntriesHtmlLeft.push(rowHtml);
+            } else {
+                dailyEntriesHtmlRight.push(rowHtml);
+            }
+        });
+
+        const totalSalaryRON = (totalWeightedHours * hourlyRate).toFixed(2);
+        const totalSalaryINR = (totalSalaryRON * exchangeRate).toFixed(2);
+
+        return `
+            <div class="report-watermark">${companyName}</div>
+            <div class="report-company-name">${companyName}</div>
+            <div class="report-header">
+                <h2>Salary Report</h2>
+                <p>For the month of ${monthName} ${year}</p>
+            </div>
+
+            <div class="report-details" style="display: flex; justify-content: space-between;">
+                <div class="left-section">
+                    <p><strong>Employee Name:</strong> ${employeeName}</p>
+                    <p><strong>Base Salary:</strong> ${salary.toFixed(2)} RON</p>
+                    <p><strong>Fixed Base Hours:</strong> ${fixedBaseHours}</p>
+                    <p><strong>Calculated Hourly Rate:</strong> ${hourlyRate.toFixed(2)} RON</p>
+                    <p><strong>Weekend Multiplier:</strong> ${weekendRate}x</p>
+                </div>
+                <div class="right-section">
+                    <p><strong>Total Hours Worked:</strong> ${totalHrsOverall}</p>
+                    <p><strong>Total Regular Hours (up to 8/day):</strong> ${totalRegularHoursForReport}</p>
+                    <p><strong>Weekday OT Hours:</strong> ${totalWeekdayOvertimeHours}</p>
+                    <p><strong>Weekend OT Hours:</strong> ${totalWeekendOvertimeHours}</p>
+                    <p><strong>Total Salary:</strong> ${totalSalaryRON} RON</p>
+                    <p><strong>Total Salary:</strong> ${totalSalaryINR} INR</p>
+                </div>
+            </div>
+
+            <h3 style="text-align: center; margin-top: 15pt; margin-bottom: 8pt; font-size: 12pt;">Daily Work Log</h3>
+            <div class="report-table-container">
+                <table class="report-table" style="width: 48%;">
+                    <thead>
+                        <tr>
+                            <th>Date, Day & Shift Option</th>
+                            <th>Hours Worked</th>
+                            <th>Daily Pay (RON)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${dailyEntriesHtmlLeft.join('')}
+                    </tbody>
+                </table>
+                <table class="report-table" style="width: 48%;">
+                    <thead>
+                        <tr>
+                            <th>Date, Day & Shift Option</th>
+                            <th>Hours Worked</th>
+                            <th>Daily Pay (RON)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${dailyEntriesHtmlRight.join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="report-footer">
+                <p><strong>Employee Signature:</strong> ___________________________________________</p>
+                <p><strong>Date of Salary Received:</strong> ___________________________________</p>
+            </div>
+        `;
+    }
+
+    function showReportPreview(format) {
+        const employeeName = document.getElementById('employee-name-input').value.trim();
+        const companyName = document.getElementById('company-name').value.trim();
+        const monthYearValue = document.getElementById('month-year-picker').value;
+
+        if (!employeeName || !companyName || !monthYearValue) {
+            alert('Please enter Employee Name, Company Name, and select a Month/Year before generating a report.');
+            return;
+        }
+
+        currentDownloadFormat = format; 
+        const reportContentDiv = document.getElementById('report-preview-content');
+        reportContentDiv.innerHTML = generateReportHTML();
+        document.getElementById('report-preview-modal').classList.remove('hidden');
+        resetZoom();
+
+        const modalDownloadBtn = document.getElementById('modal-download-btn');
+        modalDownloadBtn.innerHTML = `<i class="fas fa-download"></i> Download ${format.toUpperCase()}`;
+        modalDownloadBtn.style.backgroundColor = (format === 'pdf') ? '#e74c3c' : '#f39c12';
+    }
+
+    function hideReportPreview() {
+        document.getElementById('report-preview-modal').classList.add('hidden');
+    }
+
+    function zoomReport(factor) {
+        currentZoom = Math.max(0.5, Math.min(2.0, currentZoom + factor));
+        document.getElementById('report-preview-content').style.transform = `scale(${currentZoom})`;
+        document.getElementById('zoom-level').textContent = `${Math.round(currentZoom * 100)}%`;
+    }
+
+    function resetZoom() {
+        currentZoom = 1.0;
+        document.getElementById('report-preview-content').style.transform = `scale(${currentZoom})`;
+        document.getElementById('zoom-level').textContent = `100%`;
+    }
+
+    async function downloadReport() { 
+        const reportElement = document.getElementById('report-preview-content');
+
+        // Capture content at 1:1 scale for accurate A4 fitting
+        const originalTransform = reportElement.style.transform;
+        const originalTransformOrigin = reportElement.style.transformOrigin;
+        reportElement.style.transform = 'scale(1)'; 
+        reportElement.style.transformOrigin = 'top left';
+
+        const canvas = await html2canvas(reportElement, {
+            scale: 2, // Higher scale for better resolution
+            useCORS: true,
+            logging: false,
+            // Explicitly set width and height to match A4 for consistency
+            // Note: html2canvas may not perfectly adhere to these for content-based rendering
+            width: reportElement.offsetWidth, 
+            height: reportElement.offsetHeight
+        });
+
+        // Restore original transform after capturing
+        reportElement.style.transform = originalTransform;
+        reportElement.style.transformOrigin = originalTransformOrigin;
+
+        const employeeName = document.getElementById('employee-name-input').value.trim() || 'Employee';
+        const companyName = document.getElementById('company-name').value.trim() || 'Company';
+        const filenamePrefix = `Salary_Report_${employeeName.replace(/\s/g, '_')}_${companyName.replace(/\s/g, '_')}_${document.getElementById('month-year-picker').value}`;
+
+        if (currentDownloadFormat === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            const imgData = canvas.toDataURL('image/jpeg', 1.0); 
+
+            // Create a new PDF document in A4 size
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+
+            // Calculate ratio to fit image width to PDF width
+            const ratio = pdfWidth / imgWidth;
+            const finalImgHeight = imgHeight * ratio;
+
+            let position = 0;
+            let heightLeft = finalImgHeight;
+
+            // Add the image to the PDF. It will automatically flow to new pages if content is too long.
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, finalImgHeight);
+            heightLeft -= pdfHeight;
+
+            while (heightLeft >= -1) { 
+                position = heightLeft - pdfHeight; 
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, finalImgHeight);
+                heightLeft -= pdfHeight;
+            }
+
+            pdf.save(`${filenamePrefix}.pdf`);
+        } else if (currentDownloadFormat === 'jpg') {
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            const link = document.createElement('a');
+            link.download = `${filenamePrefix}.jpg`;
+            link.href = imgData;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    // --- Other Actions ---
+    function clearAllHours() {
+        document.querySelectorAll('#calendar-container td .hours-select').forEach(s => s.value = '');
+        document.querySelectorAll('#calendar-container td .shift-select').forEach(s => s.value = '');
+        recalculateSalary();
+    }
+
+    function shareApp() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Advanced Salary Calculator',
+                text: 'Check out this advanced Salary Calculator App for daily work logging and reporting!',
+                url: window.location.href,
+            })
+            .catch((error) => console.log('Error sharing', error));
+        } else {
+            alert('Share feature not supported in your browser. You can manually copy the URL from the address bar.');
+        }
+    }
+
+    // --- Initialization ---
+    function init() {
+        updateDate();
+        displayMotivationalMessage();
+        
+        // Set current month and year for the input field on load
+        const today = new Date();
+        const currentMonthYear = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+        document.getElementById('month-year-picker').value = currentMonthYear;
+
+        // Populate employee and company from last session if available
+        document.getElementById('employee-name-input').value = localStorage.getItem('lastEmployeeName') || '';
+        document.getElementById('company-name').value = localStorage.getItem('lastCompanyName') || '';
+        
+        updateEmployeeInfo(); // Update display with loaded names
+        generateCalendarAndLoadData(); // Generate calendar and load data based on names and current month
+    }
+
+    // Save employee and company name when they are typed
+    document.getElementById('employee-name-input').addEventListener('input', () => {
+        localStorage.setItem('lastEmployeeName', document.getElementById('employee-name-input').value.trim());
+    });
+    document.getElementById('company-name').addEventListener('input', () => {
+        localStorage.setItem('lastCompanyName', document.getElementById('company-name').value.trim());
+    });
+
+    window.onload = init;
+
+</script>
+</body>
+</html>
