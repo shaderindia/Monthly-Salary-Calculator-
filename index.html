@@ -243,29 +243,29 @@
             bottom: 0;
             background-color: rgba(0, 0, 0, 0.7);
             display: flex;
-            flex-direction: column; /* Changed to column to stack controls and content */
-            align-items: center; /* Center items horizontally */
-            justify-content: flex-start; /* Align content to top */
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
             z-index: 1000;
             padding: 20px;
         }
 
         .report-controls {
-            margin-top: 0; /* Remove top margin, handled by modal padding */
+            margin-top: 0;
             text-align: center;
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px; /* Space between controls and report */
-            padding: 10px; /* Add padding to controls */
-            background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white background */
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.95);
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            width: calc(min(95%, 900px)); /* Match container width for better look */
-            flex-shrink: 0; /* Prevent controls from shrinking */
-            z-index: 1001; /* Ensure controls are above scrollable content */
+            width: calc(min(95%, 900px));
+            flex-shrink: 0;
+            z-index: 1001;
         }
         .zoom-controls {
             display: flex;
@@ -288,30 +288,29 @@
 
         /* Container for scrollable report content */
         #report-scrollable-content {
-            flex-grow: 1; /* Allows this div to take up remaining space */
-            overflow-y: auto; /* Makes only the report content scrollable */
-            width: calc(min(95%, 900px)); /* Match container width for better look */
-            display: flex; /* Flex to center content */
-            justify-content: center; /* Center horizontally */
-            align-items: flex-start; /* Align report to top within its scrollable area */
-            padding: 10px 0; /* Add some vertical padding for content */
-            position: relative; /* Needed for watermark z-index context */
+            flex-grow: 1;
+            overflow-y: auto;
+            width: calc(min(95%, 900px));
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px 0;
+            position: relative;
         }
 
         #report-preview-content {
             background-color: #fff;
-            width: 210mm; /* A4 width */
-            /* min-height: 297mm; REMOVED: let content dictate height */
+            width: 210mm;
             padding: 15mm;
             box-shadow: 0 0 15px rgba(0,0,0,0.3);
             position: relative;
             font-family: 'Roboto', sans-serif;
             color: #333;
             font-size: 10pt;
-            margin: 0; /* Removed margin as it's now handled by #report-scrollable-content padding */
+            margin: 0;
             transform-origin: top left;
             transition: transform 0.2s ease-out;
-            flex-shrink: 0; /* Prevents content from shrinking too much if space is tight */
+            flex-shrink: 0;
         }
 
         .report-header {
@@ -509,7 +508,7 @@
             opacity: 0.7;
         }
 
-        /* Responsive adjustments */
+        /* Responsive adjustments for mobile preview (display) */
         @media(max-width: 768px){
             body {
                 padding: 10px;
@@ -557,7 +556,7 @@
                 padding: 5px 0;
             }
             #report-preview-content {
-                width: 95%;
+                width: 95%; /* Adjust width for mobile preview */
                 padding: 10mm;
             }
             .report-details div, .report-summary div {
@@ -567,16 +566,28 @@
                 font-size: 2.5em;
             }
             .report-table-container {
-                flex-direction: column;
+                flex-direction: column; /* Tables stack vertically on mobile preview */
                 gap: 0;
             }
             .report-table {
-                width: 100%;
+                width: 100%; /* Tables take full width when stacked */
             }
             .report-company-name {
                 font-size: 14pt;
                 max-width: 95%;
             }
+        }
+
+        /* NEW: Force two-column layout for report capture (PDF/JPG) regardless of screen size */
+        .force-two-columns .report-table-container {
+            flex-direction: row !important; /* Override to force side-by-side */
+            flex-wrap: nowrap !important;   /* Prevent wrapping to ensure two columns */
+            justify-content: space-between !important;
+            align-items: flex-start !important; /* Align tables to top */
+        }
+        .force-two-columns .report-table {
+            width: 48% !important; /* Override to force 48% width for two columns */
+            min-width: 200px; /* Ensure a minimum width for columns */
         }
     </style>
 </head>
@@ -1109,23 +1120,9 @@
         const dailyEntriesHtmlLeft = [];
         const dailyEntriesHtmlRight = [];
 
-        // Determine split point: aim for 15 days on the left, but adjust for balance
-        let splitPoint;
-        if (daysInMonth <= 15) { 
-            splitPoint = daysInMonth;
-        } else {
-            const idealSplit = 15;
-            const remaining = daysInMonth - idealSplit;
-            if (remaining > 0 && remaining <= 5) { 
-                splitPoint = Math.ceil(daysInMonth / 2);
-            } else {
-                splitPoint = idealSplit;
-            }
-            if (daysInMonth > 15 && splitPoint === daysInMonth) {
-                splitPoint = daysInMonth - 1;
-            }
-        }
-
+        // Strict split: First 15 days on left, rest on right
+        const fixedLeftTableDays = 15;
+        let splitPoint = Math.min(daysInMonth, fixedLeftTableDays); // If month has <=15 days, all go left. Otherwise, 15 go left.
 
         dailyEntries.forEach((data, index) => {
             const dateObj = new Date(year, month - 1, data.day);
@@ -1164,7 +1161,7 @@
                 </tr>
             `;
 
-            if (index < splitPoint) { 
+            if (data.day <= splitPoint) { // Use data.day to ensure we're checking the actual day number
                 dailyEntriesHtmlLeft.push(rowHtml);
             } else {
                 dailyEntriesHtmlRight.push(rowHtml);
@@ -1253,36 +1250,38 @@
 
     async function downloadReport(format) { 
         const reportElement = document.getElementById('report-preview-content');
-
-        // Capture content at 1:1 scale for accurate A4 fitting
+        const reportScrollableContent = document.getElementById('report-scrollable-content'); 
+        
+        // Save original styles
         const originalTransform = reportElement.style.transform;
         const originalTransformOrigin = reportElement.style.transformOrigin;
+        
+        // Apply capture-specific styles to force two columns
         reportElement.style.transform = 'scale(1)'; 
         reportElement.style.transformOrigin = 'top left';
+        reportScrollableContent.classList.add('force-two-columns'); // Add the class to force two columns for capture
 
         const canvas = await html2canvas(reportElement, {
             scale: 2, // Higher scale for better resolution
             useCORS: true,
             logging: false,
-            // Explicitly set width and height to match A4 for consistency
-            // Note: html2canvas may not perfectly adhere to these for content-based rendering
             width: reportElement.offsetWidth, 
             height: reportElement.offsetHeight
         });
 
-        // Restore original transform after capturing
+        // Restore original styles after capturing
         reportElement.style.transform = originalTransform;
         reportElement.style.transformOrigin = originalTransformOrigin;
+        reportScrollableContent.classList.remove('force-two-columns'); // Remove the class
 
         const employeeName = document.getElementById('employee-name-input').value.trim() || 'Employee';
         const companyName = document.getElementById('company-name').value.trim() || 'Company';
         const filenamePrefix = `Salary_Report_${employeeName.replace(/\s/g, '_')}_${companyName.replace(/\s/g, '_')}_${document.getElementById('month-year-picker').value}`;
 
-        if (format === 'pdf') { // Use the passed format
+        if (format === 'pdf') {
             const { jsPDF } = window.jspdf;
             const imgData = canvas.toDataURL('image/jpeg', 1.0); 
 
-            // Create a new PDF document in A4 size
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -1290,14 +1289,12 @@
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
 
-            // Calculate ratio to fit image width to PDF width
             const ratio = pdfWidth / imgWidth;
             const finalImgHeight = imgHeight * ratio;
 
             let position = 0;
             let heightLeft = finalImgHeight;
 
-            // Add the image to the PDF. It will automatically flow to new pages if content is too long.
             pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, finalImgHeight);
             heightLeft -= pdfHeight;
 
@@ -1309,7 +1306,7 @@
             }
 
             pdf.save(`${filenamePrefix}.pdf`);
-        } else if (format === 'jpg') { // Use the passed format
+        } else if (format === 'jpg') {
             const imgData = canvas.toDataURL('image/jpeg', 1.0);
             const link = document.createElement('a');
             link.download = `${filenamePrefix}.jpg`;
