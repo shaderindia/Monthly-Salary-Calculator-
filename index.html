@@ -342,15 +342,20 @@
             background-color: #f5f5f5;
             font-weight: bold;
         }
-        .report-table td:nth-child(3),
-        .report-table td:nth-child(4),
-        .report-table td:nth-child(5),
-        .report-table td:last-child {
+        /* Adjusted width for new columns */
+        .report-table th:nth-child(1), .report-table td:nth-child(1) { /* Date / Day / Shift */
+            width: 50%; /* Increased width for combined info */
+        }
+        .report-table th:nth-child(2), .report-table td:nth-child(2) { /* Hours Worked */
+            width: 25%;
             text-align: center;
         }
-        .report-table td:last-child {
+        .report-table th:nth-child(3), .report-table td:nth-child(3) { /* Daily Pay */
+            width: 25%;
             text-align: right;
         }
+
+
         .report-total-box {
             background-color: #4a90e2;
             color: #fff;
@@ -780,13 +785,8 @@
         const year = parseInt(yearStr);
         const month = parseInt(monthStr); // Month is 1-indexed from input type="month"
 
-        // weekendRate is NOT used here to set data-m, but directly in recalculateSalary
-        // const weekendRate = parseFloat(document.getElementById("weekendRate").value);
-
         // Basic validation for salary and fixedBaseHours, but calendar generation proceeds if month/year are valid
         if (isNaN(salary) || isNaN(fixedBaseHours) || fixedBaseHours <= 0) { 
-            // We'll still generate the calendar, but prompt for valid numbers if they are missing
-            // The recalculateSalary() function will handle showing 0.00 for invalid numbers
             console.warn("Base Salary or Fixed Base Hours are invalid. Calendar will generate, but calculations may be 0.");
         }
 
@@ -860,7 +860,6 @@
         document.getElementById('calendar-container').innerHTML = html;
 
         loadMonthData(); // Load previously saved data for this month/year
-        // recalculateSalary() is called by loadMonthData() and on input changes, so no explicit call here
     }
 
     function setHoursFromShift(shiftSelectElement) {
@@ -903,26 +902,23 @@
         const fixedBaseHours = parseFloat(document.getElementById('fixedBaseHours').value) || 0;
         const exchangeRate = parseFloat(document.getElementById('exchange-rate').value) || 1;
         
-        // Retrieve the CURRENT weekendRate from the dropdown each time
         const weekendRate = parseFloat(document.getElementById('weekendRate').value) || 1; 
 
         const hoursSelects = document.querySelectorAll('#calendar-container td .hours-select');
 
-        let totalHrs = 0; // This will count actual hours for reporting, not weighted
-        let totalWeightedHours = 0; // This is the crucial one for salary calculation
+        let totalHrs = 0; 
+        let totalWeightedHours = 0; 
 
-        // Calculate hourly rate based on fixed base hours
         const hourlyRate = (fixedBaseHours > 0) ? (salary / fixedBaseHours) : 0;
 
         hoursSelects.forEach((select) => {
             const hrs = parseFloat(select.value) || 0;
             
-            // Determine multiplier based on data-is-weekend for each day
             const isWeekend = select.dataset.isWeekend === 'true'; 
             const m = isWeekend ? weekendRate : 1; 
             
             totalHrs += hrs; 
-            totalWeightedHours += hrs * m; // Apply multiplier here
+            totalWeightedHours += hrs * m; 
         });
 
         const totalSalaryRON = totalWeightedHours * hourlyRate;
@@ -948,7 +944,7 @@
 
         const companyName = document.getElementById('company-name').value;
         const baseSalary = document.getElementById('salary').value;
-        const fixedBaseHours = document.getElementById('fixedBaseHours').value; // Save fixed base hours
+        const fixedBaseHours = document.getElementById('fixedBaseHours').value; 
         const weekendRate = document.getElementById('weekendRate').value;
         const exchangeRate = document.getElementById('exchange-rate').value;
 
@@ -971,7 +967,7 @@
         const monthData = {
             companyName: companyName,
             baseSalary: baseSalary,
-            fixedBaseHours: fixedBaseHours, // Save fixed base hours
+            fixedBaseHours: fixedBaseHours, 
             weekendRate: weekendRate,
             exchangeRate: exchangeRate,
             dayEntries: dayData
@@ -981,17 +977,15 @@
     }
 
     function loadMonthData() {
-        if (!currentUser) return; // Cannot load if no user is logged in
+        if (!currentUser) return; 
         const monthYearValue = document.getElementById('month-year-picker').value;
         if (!monthYearValue) {
-            // No month selected, so nothing to load for a specific month.
-            // Ensure inputs are reset to default/empty values if no data is loaded.
             document.getElementById('company-name').value = '';
             document.getElementById('salary').value = '';
             document.getElementById('fixedBaseHours').value = '160'; 
             document.getElementById('weekendRate').value = '1';
             document.getElementById('exchange-rate').value = '18.5';
-            clearAllHours(); // Clear calendar selections as well
+            clearAllHours(); 
             return;
         }
 
@@ -1003,7 +997,7 @@
 
             document.getElementById('company-name').value = monthData.companyName || '';
             document.getElementById('salary').value = monthData.baseSalary || '';
-            document.getElementById('fixedBaseHours').value = monthData.fixedBaseHours || '160'; // Load fixed base hours
+            document.getElementById('fixedBaseHours').value = monthData.fixedBaseHours || '160'; 
             document.getElementById('weekendRate').value = monthData.weekendRate || '1';
             document.getElementById('exchange-rate').value = monthData.exchangeRate || '18.5';
 
@@ -1019,13 +1013,12 @@
                 }
             });
         } else {
-            // If no stored data for the selected month, reset inputs to default/empty
             document.getElementById('company-name').value = '';
             document.getElementById('salary').value = '';
             document.getElementById('fixedBaseHours').value = '160'; 
             document.getElementById('weekendRate').value = '1';
             document.getElementById('exchange-rate').value = '18.5';
-            clearAllHours(); // Clear calendar selections as well
+            clearAllHours(); 
         }
         recalculateSalary();
         convertCurrency();
@@ -1114,18 +1107,16 @@
 
         // Determine split point: aim for 15 days on the left, but adjust for balance
         let splitPoint;
-        if (daysInMonth <= 15) { // If 15 or fewer days, put all on left
+        if (daysInMonth <= 15) { 
             splitPoint = daysInMonth;
         } else {
-            // Prioritize around 15, but ensure a somewhat even split
             const idealSplit = 15;
             const remaining = daysInMonth - idealSplit;
-            if (remaining > 0 && remaining <= 5) { // If remaining days are few, try to balance
+            if (remaining > 0 && remaining <= 5) { 
                 splitPoint = Math.ceil(daysInMonth / 2);
             } else {
                 splitPoint = idealSplit;
             }
-             // Ensure at least 1 day on the right if there are more than 15 total days
             if (daysInMonth > 15 && splitPoint === daysInMonth) {
                 splitPoint = daysInMonth - 1;
             }
@@ -1135,7 +1126,7 @@
         dailyEntries.forEach((data, index) => {
             const dateObj = new Date(year, month - 1, data.day);
             const isWeekend = data.isWeekend;
-            const multiplier = isWeekend ? weekendRate : 1; // Use the currently selected weekendRate
+            const multiplier = isWeekend ? weekendRate : 1; 
             const hrs = data.hours;
             const shiftType = data.shift;
 
@@ -1155,15 +1146,16 @@
             }
 
             const dailyPay = (hrs * hourlyRate * multiplier).toFixed(2);
-            const overtimeDisplay = overtimeHrsToday > 0 ? ` (+${overtimeHrsToday} OT)` : '';
+            const dayOfWeek = dateObj.toLocaleDateString('en-GB', { weekday: 'short' });
+            
+            // New combined string for Date, Day, and Shift Type
+            const dateDayShift = `${dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} (${dayOfWeek}) - ${shiftType}`;
+            const hoursWorkedDisplay = `${hrs} hrs${overtimeHrsToday > 0 ? ` (+${overtimeHrsToday} OT)` : ''}`;
 
             const rowHtml = `
                 <tr>
-                    <td>${dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
-                    <td>${dateObj.toLocaleDateString('en-GB', { weekday: 'short' })}</td>
-                    <td>${hrs}${overtimeDisplay}</td>
-                    <td>${shiftType}</td>
-                    <td>${multiplier.toFixed(2)}x</td>
+                    <td>${dateDayShift}</td>
+                    <td>${hoursWorkedDisplay}</td>
                     <td>${dailyPay} RON</td>
                 </tr>
             `;
@@ -1209,12 +1201,9 @@
                 <table class="report-table" style="width: 48%;">
                     <thead>
                         <tr>
-                            <th style="width:18%;">Date</th>
-                            <th style="width:12%;">Day</th>
-                            <th style="width:20%;">Hrs (OT)</th>
-                            <th style="width:15%;">Shift</th>
-                            <th style="width:15%;">Mult.</th>
-                            <th style="width:20%;">Daily Pay (RON)</th>
+                            <th>Date, Day & Shift Option</th>
+                            <th>Hours Worked</th>
+                            <th>Daily Pay (RON)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1224,12 +1213,9 @@
                 <table class="report-table" style="width: 48%;">
                     <thead>
                         <tr>
-                            <th style="width:18%;">Date</th>
-                            <th style="width:12%;">Day</th>
-                            <th style="width:20%;">Hrs (OT)</th>
-                            <th style="width:15%;">Shift</th>
-                            <th style="width:15%;">Mult.</th>
-                            <th style="width:20%;">Daily Pay (RON)</th>
+                            <th>Date, Day & Shift Option</th>
+                            <th>Hours Worked</th>
+                            <th>Daily Pay (RON)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1250,13 +1236,12 @@
             alert('Please login first to generate a report.');
             return;
         }
-        currentDownloadFormat = format; // Store the selected format
+        currentDownloadFormat = format; 
         const reportContentDiv = document.getElementById('report-preview-content');
         reportContentDiv.innerHTML = generateReportHTML();
         document.getElementById('report-preview-modal').classList.remove('hidden');
         resetZoom();
 
-        // Update the download button text in the modal based on the chosen format
         const modalDownloadBtn = document.getElementById('modal-download-btn');
         modalDownloadBtn.innerHTML = `<i class="fas fa-download"></i> Download ${format.toUpperCase()}`;
         modalDownloadBtn.style.backgroundColor = (format === 'pdf') ? '#e74c3c' : '#f39c12';
@@ -1278,20 +1263,26 @@
         document.getElementById('zoom-level').textContent = `100%`;
     }
 
-    async function downloadReport() { // Now takes no arguments, uses currentDownloadFormat
+    async function downloadReport() { 
         const reportElement = document.getElementById('report-preview-content');
 
+        // Capture content at 1:1 scale for accurate A4 fitting
         const originalTransform = reportElement.style.transform;
         const originalTransformOrigin = reportElement.style.transformOrigin;
         reportElement.style.transform = 'scale(1)'; 
         reportElement.style.transformOrigin = 'top left';
 
         const canvas = await html2canvas(reportElement, {
-            scale: 2, 
+            scale: 2, // Higher scale for better resolution
             useCORS: true,
-            logging: false
+            logging: false,
+            // Explicitly set width and height to match A4 for consistency
+            // Note: html2canvas may not perfectly adhere to these for content-based rendering
+            width: reportElement.offsetWidth, 
+            height: reportElement.offsetHeight
         });
 
+        // Restore original transform after capturing
         reportElement.style.transform = originalTransform;
         reportElement.style.transformOrigin = originalTransformOrigin;
 
@@ -1301,6 +1292,7 @@
             const { jsPDF } = window.jspdf;
             const imgData = canvas.toDataURL('image/jpeg', 1.0); 
 
+            // Create a new PDF document in A4 size
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -1308,12 +1300,14 @@
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
 
+            // Calculate ratio to fit image width to PDF width
             const ratio = pdfWidth / imgWidth;
             const finalImgHeight = imgHeight * ratio;
 
             let position = 0;
             let heightLeft = finalImgHeight;
 
+            // Add the image to the PDF. It will automatically flow to new pages if content is too long.
             pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, finalImgHeight);
             heightLeft -= pdfHeight;
 
@@ -1362,8 +1356,6 @@
         displayMotivationalMessage();
         updateUserCount();
         
-        // This ensures the month-year-picker is set to the current month by default.
-        // The calendar generation will then be triggered by its onchange event if a user logs in.
         const today = new Date();
         const currentMonthYear = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
         document.getElementById('month-year-picker').value = currentMonthYear;
@@ -1378,8 +1370,6 @@
             document.getElementById("auth-section").classList.add("hidden");
             document.getElementById("app-section").classList.remove("hidden");
             
-            // Now that month-year-picker is set, trigger calendar generation.
-            // This is the crucial part to ensure it appears on login.
             generateCalendarAndLoadData(); 
         } else {
             document.getElementById("auth-section").classList.remove("hidden");
