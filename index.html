@@ -621,16 +621,16 @@
                 <input type="text" id="company-name" placeholder="Your Company Name" oninput="updateEmployeeInfo(); generateCalendarAndLoadData();" />
             </div>
             <div class="form-group">
+                <label for="month-year-picker">Select Month and Year:</label>
+                <input type="month" id="month-year-picker" onchange="generateCalendarAndLoadData()" />
+            </div>
+            <div class="form-group">
                 <label for="salary">Base Salary (RON):</label>
                 <input type="number" id="salary" placeholder="Enter your base salary" oninput="recalculateSalary()" />
             </div>
              <div class="form-group">
                 <label for="fixedBaseHours">Fixed Base Hours per Month:</label>
                 <input type="number" id="fixedBaseHours" value="160" placeholder="e.g., 160" oninput="recalculateSalary()" />
-            </div>
-            <div class="form-group">
-                <label for="month-year-picker">Select Month and Year:</label>
-                <input type="month" id="month-year-picker" onchange="generateCalendarAndLoadData()" />
             </div>
             <div class="form-group">
                 <label for="weekendRate">Weekend Rate Multiplier:</label>
@@ -1090,8 +1090,9 @@
         const standardHoursPerDay = 8; 
 
         let totalWeekdayOvertimeHours = 0;
-        let totalWeekendOvertimeHours = 0;
+        let totalWeekendOvertimeHours = 0; 
         let totalRegularHoursForReport = 0; 
+        let totalWeekendHours = 0; // NEW: Initialize total weekend hours
 
         const hourlyRate = (fixedBaseHours > 0) ? (salary / fixedBaseHours) : 0;
 
@@ -1115,7 +1116,7 @@
         });
 
         // Sort by day to ensure correct order
-        dailyEntries.sort((a, b) => a.day - b.day);
+        dailyEntries.sort((a, b) => a.day - b.b);
 
         const dailyEntriesHtmlLeft = [];
         const dailyEntriesHtmlRight = [];
@@ -1137,10 +1138,13 @@
             totalHrsOverall += hrs;
             totalWeightedHours += hrs * multiplier;
             totalRegularHoursForReport += regularHrsToday; 
+            if (isWeekend) { // NEW: Accumulate all weekend hours
+                totalWeekendHours += hrs;
+            }
 
             if (overtimeHrsToday > 0) {
                 if (isWeekend) {
-                    totalWeekendOvertimeHours += overtimeHrsToday;
+                    totalWeekendOvertimeHours += overtimeHrsToday; 
                 } else {
                     totalWeekdayOvertimeHours += overtimeHrsToday;
                 }
@@ -1191,7 +1195,7 @@
                     <p><strong>Total Hours Worked:</strong> ${totalHrsOverall}</p>
                     <p><strong>Total Regular Hours (up to 8/day):</strong> ${totalRegularHoursForReport}</p>
                     <p><strong>Weekday OT Hours:</strong> ${totalWeekdayOvertimeHours}</p>
-                    <p><strong>Weekend OT Hours:</strong> ${totalWeekendOvertimeHours}</p>
+                    <p><strong>Total Weekend Hours:</strong> ${totalWeekendHours}</p>
                     <p><strong>Total Salary:</strong> ${totalSalaryRON} RON</p>
                     <p><strong>Total Salary:</strong> ${totalSalaryINR} INR</p>
                 </div>
